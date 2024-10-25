@@ -62,7 +62,7 @@ var job = [
   "FF2200",
   "FF1100",
 ];
-const login = require("./fca-unofficial");
+const login = require("./fb-chat-api");
 const axios = require("axios");
 const listPackage = JSON.parse(readFileSync("./package.json")).dependencies;
 const listbuiltinModules = require("module").builtinMxodules;
