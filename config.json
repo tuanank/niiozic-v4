@@ -30,11 +30,11 @@
     "EMAIL": "",
     "PASSWORD": "",
     "OTPKEY": "",
-    "ACCESSTOKEN": "EAAD6V7os0gcBO6yzQT7wxFunUfEUn8k2nFBCOAcE8l8ViYyY7pqFXZBN0Nf6NI0BryZBDCvvKJlwoaobMJHZBlrhAE9WY1LvSRrZAMhOr5yxEZCUEyAZAG5zt7KbifrIiR6G5XMeHHnzKiH2vZAYOWZCZCZAvC61iw9IZA9bmtprfQSzmx242GQmsTJP6yGkwZDZD",
+    "ACCESSTOKEN": "EAAGNO4a7r2wBOzkFrq9CRe5PXf28YFZBFXtKeI1cmYvsc3hcgybU3l6vhP6WcawQAqg4MoKFdewbVfwqZBJd8OhJAYKcC4XRxIG0x1NyhFHBnmhRl3BLuaGjnF8kkeZAMApHVMI9anhm1Gg0JtmodK0Q9xWFC2w5c7VmHWm4YBDcoFD1oThytSZBmwZDZD",
     "BOTNAME": "Bot Touniie",
     "PREFIX": "/",
     "ADMINBOT": [
-        "100042167594620",
+        "61555625227297",
         "",
         "",
         "",
@@ -44,7 +44,7 @@
         ""
     ],
     "NDH": [
-        "100042167594620"
+        "61555625227297"
     ],
     "DATABASE": {
         "sqlite": {
