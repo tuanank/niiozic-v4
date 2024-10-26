@@ -32,7 +32,7 @@
     "OTPKEY": "",
     "ACCESSTOKEN": "EAAGNO4a7r2wBOzkFrq9CRe5PXf28YFZBFXtKeI1cmYvsc3hcgybU3l6vhP6WcawQAqg4MoKFdewbVfwqZBJd8OhJAYKcC4XRxIG0x1NyhFHBnmhRl3BLuaGjnF8kkeZAMApHVMI9anhm1Gg0JtmodK0Q9xWFC2w5c7VmHWm4YBDcoFD1oThytSZBmwZDZD",
     "BOTNAME": "Bot Touniie",
-    "PREFIX": "/",
+    "PREFIX": ".",
     "ADMINBOT": [
         "61555625227297",
         "",
