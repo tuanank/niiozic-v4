@@ -2,7 +2,7 @@ module.exports.config = {
     "name": "listbox",
     "version": "1.0.0",
     "credits": "Niiozic",
-    "hasPermssion": 2,
+    "hasPermssion": 3,
     "description": "[Ban/Unban/Remove] List thread bot đã tham gia",
     "commandCategory": "Admin",
     "usages": "[số trang/all]",
@@ -38,7 +38,7 @@ module.exports.handleReply = async function({ api, event, args, Threads, handleR
                         msg += typef + ' ' + groupName + '\n» TID: ' + idgr + "\n";
                         console.log(modules, msg)
                     }
-                    api.sendMessage(`» Thông báo từ Admin «\n Nhóm Bạn Đã Bị Ban, cấm dùng bot\nThắc mắc vui lòng liên hệ admin: fb.com/niiozic.dev`, idgr, () =>
+                    api.sendMessage(`» Thông báo từ Admin «\n Nhóm Bạn Đã Bị Ban, cấm dùng bot\nThắc mắc vui lòng liên hệ admin: fb.me//vanchiendzs`, idgr, () =>
                         api.sendMessage(`${global.data.botID}`, () =>
                             api.sendMessage(`» Thực thi Ban «(true/false) «\n\n${msg}`, threadID, () =>
                                 api.unsendMessage(handleReply.messageID))));
@@ -83,7 +83,7 @@ module.exports.handleReply = async function({ api, event, args, Threads, handleR
                         msg += typef + ' ' + groupName + '\n» TID: ' + idgr + "\n";
                         console.log(modules, msg)
                     }
-                    api.sendMessage(`» Thông báo từ Admin «\n\nBox bạn đã bị cấm\nthắc mắc vui lòng liên hệ admin: fb.com/niiozic.dev`, idgr, () =>
+                    api.sendMessage(`» Thông báo từ Admin «\n\nBox bạn đã bị cấm\nthắc mắc vui lòng liên hệ admin: fb.me//vanchiendzs`, idgr, () =>
                         api.sendMessage(`${global.data.botID}`, () =>
                             api.sendMessage(`»Thực thi Out(true/false)«\n\n${msg} `, threadID, () =>
                                 api.unsendMessage(handleReply.messageID))));

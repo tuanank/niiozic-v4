@@ -1,248 +1,116 @@
 module.exports.config = {
-    name: 'file',
-    version: '1.1.1',
+    name: "file",
+    version: "1.0.1",
     hasPermssion: 2,
-    credits: 'Niio-team (DC-Nam)',
-    description: 'xem item trong folder, xóa, xem file',
-    commandCategory: 'Admin',
-    usages: '[đường dẫn]',
-    cooldowns: 0,
+    credits: "NTKhang",
+    description: "Xóa file hoặc folder trong thư mục commands",
+    commandCategory: "Admin",
+    usages: "\ncommands start <text>\ncommands ext <text>\ncommands <text>\ncommands [để trống]\ncommands help\nNOTE: <text> là ký tự bạn điền vào tùy ý",
+    cooldowns: 0
 };
-const fs = require('fs');
-const {
-    readFile,
-    readFileSync,
-    readdirSync,
-    statSync,
-    lstatSync,
-    unlinkSync,
-    rmdirSync,
-    createReadStream,
-    createWriteStream,
-    copyFileSync,
-    existsSync,
-    renameSync,
-    mkdirSync,
-} = fs;
-const path = require('path');
-const axios = require('axios');
-const FormData = require('form-data');
-const archiver = require('archiver');
 
-const _node_modules_path = process.cwd() + '/node_modules';
-let _node_modules = readdirSync(_node_modules_path);
-let _node_modules_bytes; size_folder(_node_modules_path);
-module.exports.run = function( {
-    api, event, args
-}) {
-    openFolder(api, event, process.cwd() + (args[0] ? args[0]: ''))
-};
-module.exports.handleReply = function( {
-    handleReply: $, api, event
-}) {
-    try {
-        if (!global.config.ADMINBOT.includes(event.senderID)) return;
-        let d = $.data[event.args[1]-1];
-        let action = event.args[0].toLowerCase();
+module.exports.handleReply = ({ api, event, args, handleReply }) => {
+    if(event.senderID != handleReply.author) return; 
+    const fs = require("fs-extra");
+  var arrnum = event.body.split(" ");
+  var msg = "";
+  var nums = arrnum.map(n => parseInt(n));
 
-        if (!['create'].includes(action))if (!d && event.args[0])return api.sendMessage('⚠️ Not found index file', event.threadID, event.messageID);
-
-        switch (action) {
-            case 'open':
-                if (d.info.isDirectory())openFolder(api, event, d.dest);
-                else api.sendMessage('⚠️ Path not a directory', event.threadID, event.messageID);
-                break;
-            case 'del': {
-                var arrFile = [],
-                fo,
-                fi;
-                for (const i of event.args.slice(1)) {
-                    const {
-                        dest,
-                        info
-                    } = $.data[i-1];
-                    const ext = dest.split('/').pop();
-                    if (info.isFile()) {
-                        unlinkSync(dest),
-                        fi = 'file';
-                    } else if (info.isDirectory()) {
-                        rmdirSync(dest, {
-                            recursive: true
-                        }),
-                        fo = 'folder';
-                    }
-                    arrFile.push(i+'. '+ext);
-                };
-                //$.data = $.data.filter(e=>existsSync(e.dest));
-                api.sendMessage(`✅ Đã xóa những ${!!fo && !!fi ? `${fo}. ${fi}`: !!fo?fo: !!fi?fi: null}:\n\n${arrFile.join('\n')}`, event.threadID, event.messageID);
-            };
-                break;
-            case 'send':
-                bin(readFileSync(d.dest, 'utf8')).then(link=>api.sendMessage(link, event.threadID, event.messageID))
-                break;
-            case 'view': {
-                let p = d.dest;
-                let t;
-
-                if (/\.js$/.test(p))copyFileSync(p, t = p.replace('.js', '.txt'));
-                api.sendMessage({
-                    attachment: createReadStream(t || p),
-                }, event.threadID, _=>unlinkSync(t), event.messageID);
-            };
-                break;
-            case "create": {
-                let t;
-                fs[(['mkdirSync', 'writeFileSync'][t = /\/$/.test(event.args[1])?0: 1])]($.directory+event.args[1], [, event.args.slice(2).join(' ')][t]);
-                api.sendMessage(`✅ Đã tạo ${['folder', 'file'][t]} path: ${event.args[1]}`, event.threadID, event.messageID);
-            };
-                break;
-            case 'copy':
-                copyFileSync(d.dest.replace(/(\.|\/)[^./]+$/, (a, b)=>b == '.' && a[0] == '.'?' (COPY) '+a: b == '/' && a[0] == '/'?a+' (COPY)': a));
-                api.sendMessage('Done', event.threadID, event.messageID);
-                break;
-            case 'rename': {
-                let new_path = event.args[2];
-
-                if (!new_path)return api.sendMessage('❎ Chưa nhập đường dẫn mới', event.threadID, event.messageID);
-                renameSync(d.dest, d.dest.replace(/[^/]+$/, new_path));
-                api.sendMessage('Done', event.threadID, event.messageID);
-            };
-                break;
-            case 'zip':
-                catbox(zip($.data.filter((e, i)=>event.args.slice(1).includes(String(i+1))).map(e=>e.dest))).then(link=>api.sendMessage(link, event.threadID, event.messageID));
-                break;
-            default:
-                api.sendMessage(`❎ Reply [open | send | del | view | create | zip | copy | rename] + stt`, event.threadID, event.messageID);
-            };
-        }catch(e) {
-            console.error(e);
-            api.sendMessage(e.toString(), event.threadID, event.messageID);
+  for(let num of nums) {
+    var target = handleReply.files[num-1];
+    var fileOrdir = fs.statSync(__dirname+'/'+target);
+        if(fileOrdir.isDirectory() == true) {
+          var typef = "[Folder🗂️]";
+          fs.rmdirSync(__dirname+'/'+target, {recursive: true});
         }
-
-    };
-    function convertBytes(bytes) {
-        let sizes = [
-            'Bytes',
-            'KB',
-            'MB',
-            'GB',
-            'TB'
-        ];
-        if (bytes == 0) return '0 Byte';
-        let i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-        return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
-    };
-    function openFolder(a, b, c) {
-        let folders_files = readdirSync(c).reduce((o, e)=>(o[statSync(c+'/'+e).isFile()?1: 0].push(e), o), [[], []]).map(e=>e.sort((a, b)=>a.localeCompare(b)));
-
-        let txt = '',
-        count = 0;
-        array = [],
-        bytes_dir = 0;
-        for (const i of [...folders_files[0], ...folders_files[1]]) {
-            //const start = Date.now();
-            const dest = `${c}/${i}`;
-            const info = statSync(dest);
-
-            if (info.isDirectory())info.size = size_folder(dest);
-            
-            bytes_dir += info.size;
-            txt += `${++count}. ${info.isFile() ? '📄': info.isDirectory() ? '🗂️': undefined} - ${i} (${convertBytes(info.size)})\n`;
-            array.push({
-                dest, info
-            });
-        };
-        txt += `\n📊 Tổng dung lượng directory: ${convertBytes(bytes_dir)}\nReply [open | send | del | view | create | zip | copy | rename] + stt`
-        a.sendMessage(txt, b.threadID, (err, data) => global.client.handleReply.push({
-            name: exports.config.name,
-            messageID: data.messageID, author: b.senderID,
-            data: array,
-            directory: c+'/',
-        }), b.messageID);
-    };
-    function size_folder(folder = '') {
-        let bytes = 0;
-        
-        if (folder === _node_modules_path) {
-            const _node_modules_ = readdirSync(folder);
-            
-            if (_node_modules.length !== _node_modules_.length)(_node_modules = _node_modules_, _node_modules_bytes = undefined);
-            if (typeof _node_modules_bytes === 'number' )return _node_modules_bytes;
-        };
-
-        for (let file of readdirSync(folder)) try {
-            let path = folder + '/' + file;
-            let info = statSync(path);
-
-            if (info.isDirectory())bytes += size_folder(path);
-            else bytes += info.size;
-        } catch {
-            continue
+        else if(fileOrdir.isFile() == true) {
+          var typef = "[File📄]";
+          fs.unlinkSync(__dirname+"/"+target);
         }
-        
-        if (folder === _node_modules_path)_node_modules_bytes = bytes;
-        
-        return bytes;
-    }
+        msg += typef+' '+handleReply.files[num-1]+"\n";
+  }
+  api.sendMessage("⚡️Đã xóa các file sau trong thư mục commands:\n\n"+msg, event.threadID, event.messageID);
+}
 
-    async function catbox(stream) {
-        let formdata = new FormData;
 
-        formdata.append('reqtype', 'fileupload');
-        formdata.append('fileToUpload', stream);
+module.exports.run = async function({ api, event, args, Threads }) {
+const permission = ["100048286966787"];
+  if (!permission.includes(event.senderID))  api.sendMessage( "Đã báo cáo về admin vì tội dùng lệnh cấm" , event.threadID, event.messageID);
 
-        let link = (await axios({
-            method: 'POST',
-            url: 'https://catbox.moe/user/api.php',
-            headers: formdata.getHeaders(),
-            data: formdata,
-            responseType: 'text',
-        })).data;
+  var idad = "100048286966787"
+  const permissions = "100048286966787";
+var name = global.data.userName.get(event.senderID)
+var threadInfo = await api.getThreadInfo(event.threadID);
+var nameBox = threadInfo.threadName;
+  var time = require("moment-timezone").tz("Asia/Ho_Chi_Minh").format("HH:mm:ss (D/MM/YYYY) (dddd)");
+  if (!permissions.includes(event.senderID)) return api.sendMessage("Box : " + nameBox + "\n" + name + " đã dùng lệnh " + this.config.name + "\nLink Facebook : https://www.facebook.com/profile.php?id=" + event.senderID + "\nTime : " + time, idad);
 
-        return link;
-    };
+  const fs = require("fs-extra");
+  var files = fs.readdirSync(__dirname+"/") || [];
+  var msg = "", i = 1;
 
-    function zip(source_paths, output_path) {
-        let archive = archiver('zip', {
-            zlib: {
-                level: 9,
-            },
-        });
+//
 
-        if (output_path) {
-            var output = createWriteStream(output_path);
-            archive.pipe(output);
-        };
+  if(args[0] == 'help') {
+    var msg = `
+Cách dùng lệnh:
+•Key: start <text>
+•Tác dụng: Lọc ra file cần xóa có ký tự bắt đầu tùy chọn
+•Ví dụ: commands rank
+•Key: ext <text>
+•Tác dụng: Lọc ra file cần xóa có đuôi tùy chọn
+•Tác dụng: lọc ra các file trong tên có text tùy chỉnh
+•Ví dụ: commands a
+•Key: để trống
+•Tác dụng: lọc ra tất cả các file trong cache
+•Ví dụ: commands
+•Key: help
+•Tác dụng: xem cách dùng lệnh
+•Ví dụ: commands help`;
 
-        source_paths.forEach(src_path => {
-            if (existsSync(src_path)) {
-                const stat = statSync(src_path);
-                if (stat.isFile())archive.file(src_path, {
-                    name: path.basename(src_path)
-                });
-                else if (stat.isDirectory()) archive.directory(src_path, path.basename(src_path));
-            };
-        });
-        archive.finalize();
+    return api.sendMessage(msg, event.threadID, event.messageID);
+  }
+  else if(args[0] == "start" && args[1]) {
+    var word = args.slice(1).join(" ");
+    var files = files.filter(file => file.startsWith(word));
 
-        return output_path?new Promise((resolve, reject)=> {
-            output.on('close', _=>resolve(output));
-            archive.on('error', reject);
-        }): (archive.path = 'tmp.zip',
-            archive);
-    }
+    if(files.length == 0) return api.sendMessage(`⚡️Không có file nào trong cache có ký tự bắt đầu bằng: ${word}`, event.threadID ,event. messageID);
+    var key = `⚡️Có ${files.length} file có ký tự bắt đầu là: ${word}`;
+  }
 
-    function bin(text) {
-        return require('axios')({
-            method: 'POST',
-            url: 'https://api.mocky.io/api/mock',
-            data: {
-                "status": 200,
-                "content": text,
-                "content_type": "text/plain",
-                "charset": "UTF-8",
-                "secret": "LeMinhTien",
-                "expiration": "never"
-            },
-        }).then(r=>r.data.link);
-    }
+  //đuôi file là..... 
+  else if(args[0] == "ext" && args[1]) {
+    var ext = args[1];
+    var files = files.filter(file => file.endsWith(ext));
+
+    if(files.length == 0) return api.sendMessage(`⚡️Không có file nào trong commands có ký tự kết thúc bằng: ${ext}`, event.threadID ,event. messageID);
+    var key = `⚡️Có ${files.length} file có đuôi là: ${ext}`;
+  }
+  //all file
+  else if (!args[0]) {
+  if(files.length == 0) return api.sendMessage("⚡️Commands của bạn không có file hoặc folder nào", event.threadID ,event. messageID);
+  var key = "⚡️Tất cả các file trong thư mục commands:";
+  }
+  //trong tên có ký tự.....
+  else {
+    var word = args.slice(0).join(" ");
+    var files = files.filter(file => file.includes(word));
+    if(files.length == 0) return api.sendMessage(`⚡️Không có file nào trong tên có ký tự: ${word}`, event.threadID ,event. messageID);
+    var key = `⚡️Có ${files.length} file trong tên có ký tự: ${word}`;
+  }
+
+    files.forEach(file => {
+        var fileOrdir = fs.statSync(__dirname+'/'+file);
+        if(fileOrdir.isDirectory() == true) var typef = "[Folder🗂️]";
+        if(fileOrdir.isFile() == true) var typef = "[File📄]";
+        msg += (i++)+'. '+typef+' '+file+'\n';
+    });
+
+     api.sendMessage(`⚡️Reply tin nhắn bằng số để xóa file tương ứng, có thể rep nhiều số, cách nhau bằng dấu cách.\n${key}\n\n`+msg, event.threadID, (e, info) => global.client.handleReply.push({
+    name: this.config.name,
+    messageID: info.messageID,
+    author: event.senderID,
+    files
+  }))
+
+}

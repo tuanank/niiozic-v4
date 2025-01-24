@@ -1,38 +1,42 @@
-const fs = require("fs-extra");
-const config = require("../../config.json");
 module.exports.config = {
-    name: "autoout",
-    version: "1.0.0",
-    hasPermssion: 2,
-    credits: "",
-    description: "Bot sẽ tự động rời khỏi nhóm dưới số thành viên được chỉ định.",
-    commandCategory: "Admin",
-    usages: "[số thành viên]",
-    cooldowns: 0
+    name: 'autoout',
+    version: '1.1.1',
+    hasPermssion: 3,
+    credits: 'DC-Nam',
+    description: 'Tự động rời nhóm',
+    commandCategory: 'Admin',
+    usages: 'số member + thông báo',
+    cooldowns: 2
 };
-
-module.exports.onLoad = () => {
-    if(!config["leave"]) config["leave"] = {};
-    if(!config["leave"]["status"]) config["leave"]["status"] = false;
-    if(!config["leave"]["number"]) config["leave"]["number"] = 0;
-    fs.writeFileSync("./config.json", JSON.stringify(config, null, 4));
-}
-
-module.exports.run = async ({ api, event, args }) => {
-    const { threadID, messageID } = event;
-  const permission = [`${global.config.ADMINBOT[0]}`];
-	if (!permission.includes(event.senderID)) return api.sendMessage("⚠️ Bạn không được phép sử dụng lệnh này", event.threadID, event.messageID);
-    
-    if(args[0]) number = parseInt(args[0]);
-    config.leave = { status: config.leave.status == true ? false : true, number: number || config.leave.number}
-    fs.writeFileSync("./config.json", JSON.stringify(config, null, 4));
-    return api.sendMessage(`✅ Đã ${config["leave"]["status"] == true ? "bật" : "tắt"} chức năng tự động rời khỏi nhóm khi nhóm có số thành viên nhỏ hơn ${config["leave"]["number"]} thành viên.`, threadID, messageID);
-}
-
-module.exports.handleEvent = async ({ api, event }) => {
-    const { threadID, messageID, participantIDs =[]} = event;
-    if (config["leave"]["status"] && participantIDs?.length <= config["leave"]["number"] && event.isGroup && event.senderID != api.getCurrentUserID() && !config.ADMINBOT.includes(event.senderID)) {
-       await api.sendMessage(`⚠️ Đã phát hiện nhóm có ${participantIDs.length}/${config["leave"]["number"]} thành viên yêu cầu nhóm phải có ${config["leave"]["number"]} thành viên mới có thể sử dụng, thực thi out`, threadID);
-        return api.removeUserFromGroup(api.getCurrentUserID(), threadID);
+   async function onLoad(){
+   const { existsSync, writeFileSync } = require('fs-extra')
+   const { join } = require('path');
+   const pathData = join(__dirname, "cache","data","autoout.json");
+   if (!existsSync(pathData)) writeFileSync(pathData, "[]", "utf-8");
+     }
+onLoad()
+module.exports.handleEvent = function({
+    api,
+    event
+}) {
+    const auto = global.cmds_autoout || {};
+    if (!event.isGroup) return;
+    if (!auto.status) return;
+    if (event.participantIDs.length < auto.num) return api.sendMessage(`Bot tự rời khi nhóm dưới ${auto.num} thành viên`, event.threadID, async function() {
+        await api.removeUserFromGroup(a.getCurrentUserID(), event.threadID);
+    });
+};
+module.exports.run = function({
+    api,
+    event
+}) {
+  if (!global.cmds_autoout) global.cmds.autoout = {};
+    const auto = global.cmds_autoout || {};
+    if (isNaN(event.args[1])) return;
+    const status = !auto.status ? true: false;
+    global.cmds_autoout = {
+        status,
+        num: + event.args[1]
     }
-}                       
+    a.sendMessage(`Đã ${status ? 'bật': 'tắt'} tự động rời nhóm dưới ${event.args[1]} thành viên`, event.threadID, event.messageID);
+};

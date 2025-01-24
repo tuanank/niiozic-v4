@@ -3,12 +3,12 @@ class Judas {
     return {
       name: "runmocky",
       version: "1.1.2",
-      hasPermssion: 2,
-      credits: "Minh Huy Dev (Loren Bot py)",
+      hasPermssion: 3,
+      credits: "Minh Huy Dev(Loren Bot py)",
       description: "",
       commandCategory: "Admin",
       usages: "",
-      cooldowns: 0
+      cooldowns: 5
     }
   }
 
@@ -53,4 +53,4 @@ if(contents.endsWith(".js")){
 }
 }
 }
-module.exports = new Judas()
+module.exports = new Judas();

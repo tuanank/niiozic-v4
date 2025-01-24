@@ -1,94 +1,79 @@
-/1/
-const axios = require('axios');
-const fs = require('fs');
+module.exports = new Module ({
+  name: 'note',
+  version: '205',
+  hasPermssion: 3,
+  credits: 'SINGU-💌💌',
+  description: 'tạo, áp dụng văn bản',
+  commandCategory: 'ADMIN',
+  cooldowns: 3
+});
 
-module.exports = {
-    config: {
-        name: 'note',
-        version: '0.0.1',
-        hasPermssion: 2,
-        credits: 'Niio-team (DC-Nam)',
-        description: 'https://niiozic.site/note/:UUID',
-        commandCategory: 'Admin',
-        usages: '[]',
-        cooldowns: 3,
-    },
-    run: async function(o) {
-        const name = module.exports.config.name;
-        const url = o.event?.messageReply?.args?.[0] || o.args[1];
-        let path = `${__dirname}/${o.args[0]}`;
-        const send = msg=>new Promise(r=>o.api.sendMessage(msg, o.event.threadID, (err, res)=>r(res), o.event.messageID));
+function Module (info) {
+  axios = require('axios'),
+  fse = require('fs-extra'),
+  web = 'https://ghichu.nguyenlienmanh.com',
+  this.config = info,
+  this.language = require('./cmd.js').language,
+  this.run = async function (bot) {
+      const
+      send = (t, _)=>bot.api.sendMessage(t, bot.event.threadID, _?_: undefined, bot.event.messageID),
+      {
+          args,
+          type,
+          senderID,
+          messageReply
+      } = bot.event,
+      prefix = args.shift()[0],
+      case_ = args.shift(),
+      str = args.join(' '),
+      input = str.split('|');
 
-        try {
-            if (/^https:\/\//.test(url)) {
-                return send(`🔗 File: ${path}\n\nThả cảm xúc để xác nhận thay thế nội dung file`).then(res=> {
-                    res = {
-                        ...res,
-                        name,
-                        path,
-                        o,
-                        url,
-                        action: 'confirm_replace_content',
-                    };
-                    global.client.handleReaction.push(res);
-                });
-            } else {
-                //if (o.args[0] === 'edit' && o.args[1])path = `${__dirname}/${o.args[1]}`;
-                if (!fs.existsSync(path))return send(`❎ Đường dẫn file không tồn tại để export`);
-                const uuid_raw = require('uuid').v4();
-                const url_raw = new URL(`https://niiozic.site/note/${uuid_raw}`);
-                const url_redirect = new URL(`https://niiozic.site/note/${require('uuid').v4()}`);
-                await axios.put(url_raw.href, fs.readFileSync(path, 'utf8'));
-                url_redirect.searchParams.append('raw', uuid_raw);
-                await axios.put(url_redirect.href);
-                url_redirect.searchParams.delete('raw');
-                //url_redirect.searchParams.append('raw', 'true');
-                return send(`📝 Raw: ${url_redirect.href}\n\n✏️ Edit: ${url_raw.href}\n\n🔗 File: ${path}\n\n📌 Thả cảm xúc để upload code`).then(res=> {
-                    res = {
-                        ...res,
-                        name,
-                        path,
-                        o,
-                        url: url_redirect.href,
-                        action: 'confirm_replace_content',
-                    };
-                    global.client.handleReaction.push(res);
-                });
-            }
-        } catch(e) {
-            console.error(e);
-            send(e.toString());
-        }
-    },
-    handleReaction: async function(o) {
-        const _ = o.handleReaction;
-        const send = msg=>new Promise(r=>o.api.sendMessage(msg, o.event.threadID, (err, res)=>r(res), o.event.messageID));
+      switch (case_) {
+          case 'text': case 't': {
+              const data = type == 'message_reply'?messageReply.body: input.shift();
 
-        try {
-            if (o.event.userID != _.o.event.senderID)return;
+              axios.post(`${web}/create`, {
+                  data, t_end_id: input[0], pw_id: input[1]
+              }).then(res => send(res.data)).catch(err => send(err.response.data));
+          };
+              break;
 
-            switch (_.action) {
-                case 'confirm_replace_content': {
-                    const data = (await axios.get(_.url, {
-                        responseType: 'arraybuffer',
-                    })).data;
+              case 'file': case 'f': {
+                  if (!new RegExp(global.config.ADMINBOT.join('|')).test(senderID)) return;
+                  const p = `${__dirname}/${input[0]}`;
+                  if (!fse.existsSync(p)) return send(`Không tìm thấy file: ${p}`)
+                  const data = fse.readFileSync(p, 'utf-8');
 
-                    fs.writeFileSync(_.path, data);
-                    send(`✅ Đã upload code thành công\n\n🔗 File: ${_.path}`).then(res=> {
-                        res = {
-                            ..._,
-                            ...res,
-                        };
-                        global.client.handleReaction.push(res);
-                    });
-                };
-                    break;
-                default:
-                    break;
-            }
-        } catch(e) {
-            console.error(e);
-            send(e.toString());
-        }
-    }
-}
+                  axios.post(`${web}/create`, {
+                      data, t_end_id: input[1], pw_id: input[2]
+                  }).then(res => send(res.data)).catch(err => send(err.response.data));
+              };
+                  break;
+
+                  case 'download': case 'd': {
+                      if (!new RegExp(global.config.ADMINBOT.join('|')).test(senderID)) return;
+
+                      const url = type == 'message_reply'?messageReply.args.filter(el => /https:\/\//.test(el))[0]: input.shift();
+
+                      axios.post(url, {
+                          pw_id: input[1] || 1
+                      }).then(res => send(`-> Thả cảm xúc vào tin nhắn này để xác nhận áp dụng Dữ Liệu mới vào: ${path = __dirname+`/${input[0]}`}`, (err, data)=>global.client.handleReaction.push({
+                              name: info.name, messageID: data.messageID, author: senderID, data: res.data, path
+                          }))).catch(err => send(err.response.data));
+                  };
+                      break;
+
+                      default: send(`[===[ GHI CHÚ ]===]\n\n${new RegExp(global.config.ADMINBOT.join('|')).test(senderID)?`- [file/f] [path] [time(m,h,d)/...] [password/...]\n- [download/d] [url/reply url] [path] [password/...]\n`: ''}- [text/t] [text/reply text] [time(m,h,d)/...] [password/...]\n\n-> Các thông số được cách nhau bằng "|"\n-> VD: {comand} t Hello|1m|123 => nội dung "Hello" sau 1phút tự gỡ link password để truy cập "123"`)
+                      };
+              },
+              this.handleReaction = function (bot) {
+                  const
+                  _ = bot.handleReaction;
+
+                  if (bot.event.userID != _.author)return;
+                  fse.writeFileSync(_.path, _.data, 'utf-8');
+                  require('./cmd.js').loadCommand({
+                      moduleList: [(p = _.path.split(/\/|\./), p[p.length-2])], threadID: bot.event.threadID, messageID: _.messageID, getText: bot.getText
+                  });
+          };
+      };

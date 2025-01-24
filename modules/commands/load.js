@@ -1,26 +1,24 @@
 module.exports.config = {
-  name: "load",
-  version: "1.1.1",
-  hasPermssion: 3,
-  credits: "Quất",
-  description: "Load lệnh giống cmd nhưng nhanh hơn",
-  commandCategory: "Admin",
-  usages: "[]",
-  cooldowns: 0,
-  dependencies: {
-      "fs-extra": "",
-      "child_process": "",
-      "path": ""
-  }
+    name: "load",
+    version: "1.0.0",
+    hasPermssion: 2,
+    credits: "Mirai Team",
+    description: "Quản lý/Kiểm soát toàn bộ module của bot",
+    commandCategory: "Admin",
+    usages: "[mdl/un/All/unAll/info/count] [tên module]",
+    cooldowns: 1,
+    dependencies: {
+        "fs-extra": "",
+        "child_process": "",
+        "path": ""
+    }
 };
-const { execSync } = require('child_process');
-const { writeFileSync, unlinkSync, readFileSync } = require('fs-extra');
-const { join } = require('path');
-
 
 const loadCommand = function ({ moduleList, threadID, messageID }) {
 
-
+    const { execSync } = global.nodemodule['child_process'];
+    const { writeFileSync, unlinkSync, readFileSync } = global.nodemodule['fs-extra'];
+    const { join } = global.nodemodule['path'];
     const { configPath, mainPath, api } = global.client;
     const logger = require(mainPath + '/utils/log');
 
@@ -49,7 +47,7 @@ const loadCommand = function ({ moduleList, threadID, messageID }) {
                         if (listPackage.hasOwnProperty(packageName) || listbuiltinModules.includes(packageName)) global.nodemodule[packageName] = require(packageName);
                         else global.nodemodule[packageName] = require(moduleDir);
                     } catch {
-                        logger.loader('Không tìm thấy package ' + packageName + ' hỗ trợ cho lệnh ' + command.config.name+ ' tiến hành cài đặt...', 'warn');
+                        logger.loader('Không tìm thấy package ' + packageName + ' hỗ trợ cho lệnh ' + command.config.name+ 'tiến hành cài đặt...', 'warn');
                         const insPack = {};
                         insPack.stdio = 'inherit';
                         insPack.env = process.env ;
@@ -87,14 +85,14 @@ const loadCommand = function ({ moduleList, threadID, messageID }) {
                 }
                 logger.loader('Loaded config' + ' ' + command.config.name);
             } catch (error) {
-                throw new Error('⚠️ Không thể tải config module, lỗi: ' + JSON.stringify(error));
+                throw new Error('» Không thể tải config module, lỗi: ' + JSON.stringify(error));
             }
             if (command['onLoad']) try {
                 const onLoads = {};
                 onLoads['configValue'] = configValue;
                 command['onLoad'](onLoads);
             } catch (error) {
-                throw new Error('⚠️ Không thể onload module, lỗi: ' + JSON.stringify(error), 'error');
+                throw new Error(' ➜  Không thể onLoad module, lỗi: ' + JSON.stringify(error), 'error');
             }
             if (command.handleEvent) global.client.eventRegistered.push(command.config.name);
             (global.config.commandDisabled.includes(nameModule + '.js') || configValue.commandDisabled.includes(nameModule + '.js')) 
@@ -106,19 +104,92 @@ const loadCommand = function ({ moduleList, threadID, messageID }) {
             errorList.push('- ' + nameModule + ' reason:' + error + ' at ' + error['stack']);
         };
     }
-    if (errorList.length != 0) api.sendMessage('⚠️ Những lệnh vừa xảy ra sự cố khi hệ thống loading: ' + errorList.join(' '), threadID, messageID);
-  if (moduleList.length - errorList.length == 1) return api.setMessageReaction("✅", messageID, (err) => {}, true)
-  if (moduleList.length - errorList.length == 0) return api.setMessageReaction("❎", messageID, (err) => {}, true)
-    api.sendMessage((moduleList.length - errorList.length) + " ✅", threadID, messageID) 
-    writeFileSync(configPath, JSON.stringify(configValue, null, 4), 'utf8')
-    unlinkSync(configPath + '.temp');
-    return;
+
+if (errorList.length != 0) {
+    console.log(`Những lệnh đã xảy ra sự cố khi đang load: ${errorList.join(' ')}`, threadID, messageID);
+    api.setMessageReaction("😠", messageID);  // Add a reacting emoji to the user's message
+  } else { 
+    api.setMessageReaction("👍", messageID);  // Add a reacting emoji to the user's message
+  writeFileSync(configPath, JSON.stringify(configValue, null, 4), 'utf8')
+  unlinkSync(configPath + '.temp');
+  return;
+  }
+
 }
 
-module.exports.run = async function ({ api, event, args }) {
- const { threadID, messageID } = event;
-  
-    var moduleList = args.splice(0, args.length);
-    if (moduleList.length === 0) return api.setMessageReaction("⚠️", event.messageID, (err) => {}, true)
+
+const unloadModule = function ({ moduleList, threadID, messageID }) {
+    const { writeFileSync, unlinkSync } = global.nodemodule["fs-extra"];
+    const { configPath, mainPath, api } = global.client;
+    const logger = require(mainPath + "/utils/log").loader;
+
+    delete require.cache[require.resolve(configPath)];
+    var configValue = require(configPath);
+    writeFileSync(configPath + ".temp", JSON.stringify(configValue, null, 4), 'utf8');
+
+    for (const nameModule of moduleList) {
+        global.client.commands.delete(nameModule);
+        global.client.eventRegistered = global.client.eventRegistered.filter(item => item !== nameModule);
+        configValue["commandDisabled"].push(`${nameModule}.js`);
+        global.config["commandDisabled"].push(`${nameModule}.js`);
+        logger(`Unloaded command ${nameModule}!`);
+    }
+
+    writeFileSync(configPath, JSON.stringify(configValue, null, 4), 'utf8');
+    unlinkSync(configPath + ".temp");
+
+    return api.sendMessage(` ➜  Đã hủy thành công ${moduleList.length} lệnh`, threadID, messageID);
+}
+
+module.exports.run = function ({ event, args, api }) {
+
+    const { readdirSync } = global.nodemodule["fs-extra"];
+    const { threadID, messageID } = event;
+    var moduleList = args.splice(1, args.length);
+    switch (args[0]) {
+      case "count": {
+      let commands = client.commands.values();
+      let infoCommand = "";
+      api.sendMessage(" ➜ Hiện tại đang có " + client.commands.size + " lệnh có thể sử dụng!"+ infoCommand, event.threadID, event.messageID);
+      break;
+    }
+        case "mdl": {
+            if (moduleList.length == 0) return api.sendMessage(" ➜  Tên module không được để trống!", threadID, messageID);
             else return loadCommand({ moduleList, threadID, messageID });
+        }
+        case "un": {
+            if (moduleList.length == 0) return api.sendMessage(" ➜  Tên module không được để trống!", threadID, messageID);
+            else return unloadModule({ moduleList, threadID,   messageID });
+        }
+        case "All": {
+            moduleList = readdirSync(__dirname).filter((file) => file.endsWith(".js") && !file.includes('example'));
+            moduleList = moduleList.map(item => item.replace(/\.js/g, ""));
+            return loadCommand({ moduleList, threadID, messageID });
+        }
+        case "unAll": {
+            moduleList = readdirSync(__dirname).filter((file) => file.endsWith(".js") && !file.includes('example') && !file.includes("command"));
+            moduleList = moduleList.map(item => item.replace(/\.js/g, ""));
+            return unloadModule({ moduleList, threadID, messageID });
+        }
+        case "info": {
+            const command = global.client.commands.get(moduleList.join("") || "");
+
+            if (!command) return api.sendMessage("➜ Module bạn nhập không tồn tại!", threadID, messageID);
+
+            const { name, version, hasPermssion, credits, cooldowns, dependencies } = command.config;
+
+            return api.sendMessage(
+                "=== " + name.toUpperCase() + " ===\n" +
+                "- Được code bởi: " + credits + "\n" +
+                "- Phiên bản: " + version + "\n" +
+                "- Yêu cầu quyền hạn: " + ((hasPermssion == 0) ? "Người dùng" : (hasPermssion == 1) ? "Quản trị viên" : "Người vận hành bot" ) + "\n" +
+                "- Thời gian chờ: " + cooldowns + " giây(s)\n" +
+                `- Các package yêu cầu: ${(Object.keys(dependencies || {})).join(", ") || "Không có"}`,
+                threadID, messageID
+            );
+        }
+        default: {
+            return global.utils.throwError(this.config.name, threadID, messageID);
+        }
+    }
 }
